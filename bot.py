@@ -1,16 +1,23 @@
 from configparser import ConfigParser
-from os import environ, execv, system
+from os import environ, execv, name, system
+from glob import glob
 from sys import argv, executable, stdout
 from discord.errors import LoginFailure
 from discord.flags import Intents
 
 from distutils.util import strtobool
 
-from utilsx.console.formatter import Prettier
+from utilsx.console.formatter import Colors, Prettier
 
 from utilsx.discord import BotX
 
 from utils.print_handler import PrintHandler
+
+# Simple utility: we have different path delimiter whether
+# if we are on Linux or Windows
+fileDelimiter = "/"
+if name == "nt":
+    fileDelimiter = "\\"
 
 # First, we need to read the config file
 config = ConfigParser()
@@ -33,6 +40,14 @@ class Bot(BotX):
         self.printHandler.info("Initialisation du bot...")
 
         self.prefix = config["BOT"].get("prefix", "!")
+
+        # We need to load extensions from config file
+        self.printHandler.info("Chargement des extensions...")
+        extensions = list(map(lambda extension: extension.replace(fileDelimiter, ".")[:-3], glob("extensions/*.py")))
+
+        for index, _ in enumerate(self.load_extensions(extensions)):
+            self.printHandler.info(f"Chargement réussi de "
+                         f"{Colors.light_magenta.value + extensions[index].replace('extensions.', '')}")
 
     @staticmethod
     def restart():
